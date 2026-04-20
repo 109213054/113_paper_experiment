@@ -1,0 +1,31 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# ZKP / Circom / snarkjs build artifacts
+*.r1cs
+*.sym
+*.wasm
+*.zkey
+*.wtns
+proof.json
+public.json
+
+# General build folders
+build/
+dist/
+out/
+
+# Logs
+*.log
+
+# Large generated results
+results/raw/*.tmp
+
