@@ -61,3 +61,27 @@ Initial symmetric test cases:
 ## 7. Notes
 This repository is intended for reproducible ZKP resource evaluation experiments.
 
+## 8. Environment Setup
+
+This project is recommended to run in Docker for reproducibility.
+
+### Host Requirements
+- Linux host
+- Docker installed
+- Git installed
+
+### Container Tools
+- Ubuntu 22.04
+- Node.js 20.x
+- npm
+- snarkjs
+- Rust
+- cargo
+- circom
+- Python 3
+
+### Build Docker Image
+```bash
+docker build -t zkp-settlement-exp:1.0 .
+
+
