@@ -18,6 +18,14 @@ node_modules/
 proof.json
 public.json
 
+# ZKP folders (local artifacts / setup)
+ptau/
+inputs/
+build/
+
+# Optional: third-party node stuff inside circomlib
+third_party/circomlib/node_modules/
+
 # General build folders
 build/
 dist/
