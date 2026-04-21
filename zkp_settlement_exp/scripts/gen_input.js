@@ -3,27 +3,46 @@ const path = require("path");
 const circomlibjs = require("circomlibjs");
 
 async function main() {
+  const mode = process.argv[2] || "receive"; // receive / pay / zero
+
   const poseidon = await circomlibjs.buildPoseidon();
   const F = poseidon.F;
 
-  // price commitment witness
+  // price witness
   const price = 10n;
   const rPrice = 123n;
   const saltPrice = 456n;
 
-  // seller witness
+  // IDs
   const sid = [1n];
-  const sellActual = [5n];
+  const bid = [1n];
+
+  // actual energy values
+  let sellActual;
+  let buyActual;
+
+  if (mode === "pay") {
+    // sellerSum > buyerSum -> DSO accounts payable -> balDSOSign = 1
+    sellActual = [9n];
+    buyActual = [4n];
+  } else if (mode === "receive") {
+    // sellerSum < buyerSum -> DSO accounts receivable -> balDSOSign = 0
+    sellActual = [5n];
+    buyActual = [8n];
+  } else if (mode === "zero") {
+    // sellerSum = buyerSum -> balDSOAbs = 0, balDSOSign = 0
+    sellActual = [5n];
+    buyActual = [5n];
+  } else {
+    throw new Error(`Unknown mode: ${mode}`);
+  }
+
   const rSell = [111n];
   const saltSell = [222n];
-
-  // buyer witness
-  const bid = [1n];
-  const buyActual = [8n];
   const rBuy = [333n];
   const saltBuy = [444n];
 
-  // public outputs derived from witness
+  // commitments
   const H_price_epoch = F.toString(
     poseidon([price, rPrice, saltPrice])
   );
@@ -40,9 +59,30 @@ async function main() {
     )
   ];
 
+  // settlement values
   const payToSeller = [sellActual[0] * price];
   const buyerPay = [buyActual[0] * price];
-  const balDSOAbs = buyerPay[0] - payToSeller[0];
+
+  const sellerSum = payToSeller[0];
+  const buyerSum = buyerPay[0];
+  const dsoDiff = sellerSum - buyerSum; // sellerSum - buyerSum
+
+  let balDSOAbs;
+  let balDSOSign;
+
+  if (dsoDiff > 0n) {
+    // DSO accounts payable
+    balDSOSign = 1n;
+    balDSOAbs = dsoDiff;
+  } else if (dsoDiff < 0n) {
+    // DSO accounts receivable
+    balDSOSign = 0n;
+    balDSOAbs = -dsoDiff;
+  } else {
+    // zero case
+    balDSOSign = 0n;
+    balDSOAbs = 0n;
+  }
 
   const input = {
     // public inputs
@@ -51,6 +91,7 @@ async function main() {
     mActualBuy: mActualBuy.map(String),
     payToSeller: payToSeller.map((x) => x.toString()),
     balDSOAbs: balDSOAbs.toString(),
+    balDSOSign: balDSOSign.toString(),
 
     // private witness
     price: price.toString(),
@@ -68,12 +109,13 @@ async function main() {
     saltBuy: saltBuy.map((x) => x.toString())
   };
 
-  const outDir = path.join("inputs", "generated", "formal_1_1");
+  const outDir = path.join("inputs", "generated", `formal_signed_1_1_${mode}`);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outPath = path.join(outDir, "input.json");
   fs.writeFileSync(outPath, JSON.stringify(input, null, 2));
 
+  console.log(`Mode: ${mode}`);
   console.log(`Input written to ${outPath}`);
   console.log(JSON.stringify(input, null, 2));
 }
@@ -82,5 +124,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
-
