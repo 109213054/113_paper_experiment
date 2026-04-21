@@ -8,29 +8,47 @@ async function main() {
   const poseidon = await circomlibjs.buildPoseidon();
   const F = poseidon.F;
 
+  // -------------------------
+  // epoch
+  // -------------------------
+  const epoch = 1n;
+
+  // -------------------------
+  // domain tags
+  // -------------------------
+  const PRICE = 297481622096n;
+  const ACTSELL = 21475958864495425n;
+  const ACTBUY = 98222719910721n;
+
+  // -------------------------
   // price witness
+  // -------------------------
   const price = 10n;
   const rPrice = 123n;
   const saltPrice = 456n;
 
+  // -------------------------
   // IDs
+  // -------------------------
   const sid = [1n];
   const bid = [1n];
 
+  // -------------------------
   // actual energy values
+  // -------------------------
   let sellActual;
   let buyActual;
 
   if (mode === "pay") {
-    // sellerSum > buyerSum -> DSO accounts payable -> balDSOSign = 1
+    // sellerSum > buyerSum -> DSO 應付 -> sign = 1
     sellActual = [9n];
     buyActual = [4n];
   } else if (mode === "receive") {
-    // sellerSum < buyerSum -> DSO accounts receivable -> balDSOSign = 0
+    // sellerSum < buyerSum -> DSO 應收 -> sign = 0
     sellActual = [5n];
     buyActual = [8n];
   } else if (mode === "zero") {
-    // sellerSum = buyerSum -> balDSOAbs = 0, balDSOSign = 0
+    // sellerSum = buyerSum -> abs=0, sign=0
     sellActual = [5n];
     buyActual = [5n];
   } else {
@@ -42,50 +60,52 @@ async function main() {
   const rBuy = [333n];
   const saltBuy = [444n];
 
+  // -------------------------
   // commitments
+  // -------------------------
   const H_price_epoch = F.toString(
-    poseidon([price, rPrice, saltPrice])
+    poseidon([PRICE, epoch, price, rPrice, saltPrice])
   );
 
   const mActualSell = [
     F.toString(
-      poseidon([sid[0], sellActual[0], rSell[0], saltSell[0]])
+      poseidon([ACTSELL, epoch, sid[0], sellActual[0], rSell[0], saltSell[0]])
     )
   ];
 
   const mActualBuy = [
     F.toString(
-      poseidon([bid[0], buyActual[0], rBuy[0], saltBuy[0]])
+      poseidon([ACTBUY, epoch, bid[0], buyActual[0], rBuy[0], saltBuy[0]])
     )
   ];
 
+  // -------------------------
   // settlement values
+  // -------------------------
   const payToSeller = [sellActual[0] * price];
   const buyerPay = [buyActual[0] * price];
 
   const sellerSum = payToSeller[0];
   const buyerSum = buyerPay[0];
-  const dsoDiff = sellerSum - buyerSum; // sellerSum - buyerSum
+  const dsoDiff = sellerSum - buyerSum;
 
   let balDSOAbs;
   let balDSOSign;
 
   if (dsoDiff > 0n) {
-    // DSO accounts payable
-    balDSOSign = 1n;
+    balDSOSign = 1n;  // DSO 應付
     balDSOAbs = dsoDiff;
   } else if (dsoDiff < 0n) {
-    // DSO accounts receivable
-    balDSOSign = 0n;
+    balDSOSign = 0n;  // DSO 應收
     balDSOAbs = -dsoDiff;
   } else {
-    // zero case
-    balDSOSign = 0n;
+    balDSOSign = 0n;  // zero case
     balDSOAbs = 0n;
   }
 
   const input = {
     // public inputs
+    epoch: epoch.toString(),
     H_price_epoch,
     mActualSell: mActualSell.map(String),
     mActualBuy: mActualBuy.map(String),
@@ -109,7 +129,7 @@ async function main() {
     saltBuy: saltBuy.map((x) => x.toString())
   };
 
-  const outDir = path.join("inputs", "generated", `formal_signed_1_1_${mode}`);
+  const outDir = path.join("inputs", "generated", `phase1_signed_1_1_${mode}`);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outPath = path.join(outDir, "input.json");
@@ -124,3 +144,4 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
