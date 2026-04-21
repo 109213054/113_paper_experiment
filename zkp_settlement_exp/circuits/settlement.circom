@@ -9,6 +9,8 @@ template Settlement(nSeller, nBuyer) {
     // -------------------------
     signal input epoch;
     signal input H_price_epoch;
+    signal input mClaimSell[nSeller];
+    signal input mClaimBuy[nBuyer];
     signal input mActualSell[nSeller];
     signal input mActualBuy[nBuyer];
     signal input payToSeller[nSeller];
@@ -22,12 +24,24 @@ template Settlement(nSeller, nBuyer) {
     signal input rPrice;
     signal input saltPrice;
 
+    // seller claim layer
     signal input sid[nSeller];
+    signal input claimSell[nSeller];
+    signal input rClaimSell[nSeller];
+    signal input saltClaimSell[nSeller];
+
+    // seller actual layer
     signal input sellActual[nSeller];
     signal input rSell[nSeller];
     signal input saltSell[nSeller];
 
+    // buyer claim layer
     signal input bid[nBuyer];
+    signal input claimBuy[nBuyer];
+    signal input rClaimBuy[nBuyer];
+    signal input saltClaimBuy[nBuyer];
+
+    // buyer actual layer
     signal input buyActual[nBuyer];
     signal input rBuy[nBuyer];
     signal input saltBuy[nBuyer];
@@ -36,6 +50,8 @@ template Settlement(nSeller, nBuyer) {
     // domain tag constants
     // -------------------------
     var PRICE_TAG = 297481622096;
+    var CLAIMSELL_TAG = 1407448440113608084547;
+    var CLAIMBUY_TAG = 6437124142104923203;
     var ACTSELL_TAG = 21475958864495425;
     var ACTBUY_TAG = 98222719910721;
 
@@ -61,6 +77,8 @@ template Settlement(nSeller, nBuyer) {
     // components
     // -------------------------
     component priceHasher = Poseidon(5);
+    component claimSellHasher[nSeller];
+    component claimBuyHasher[nBuyer];
     component sellHasher[nSeller];
     component buyHasher[nBuyer];
 
@@ -79,7 +97,37 @@ template Settlement(nSeller, nBuyer) {
     H_price_epoch === priceHasher.out;
 
     // -------------------------
-    // 2. Seller commitment + payout checks
+    // 2. Seller claim commitment
+    // mClaimSell[i] = Poseidon([CLAIMSELL, epoch, sid, claimSell, rClaimSell, saltClaimSell])
+    // -------------------------
+    for (var i = 0; i < nSeller; i++) {
+        claimSellHasher[i] = Poseidon(6);
+        claimSellHasher[i].inputs[0] <== CLAIMSELL_TAG;
+        claimSellHasher[i].inputs[1] <== epoch;
+        claimSellHasher[i].inputs[2] <== sid[i];
+        claimSellHasher[i].inputs[3] <== claimSell[i];
+        claimSellHasher[i].inputs[4] <== rClaimSell[i];
+        claimSellHasher[i].inputs[5] <== saltClaimSell[i];
+        mClaimSell[i] === claimSellHasher[i].out;
+    }
+
+    // -------------------------
+    // 3. Buyer claim commitment
+    // mClaimBuy[j] = Poseidon([CLAIMBUY, epoch, bid, claimBuy, rClaimBuy, saltClaimBuy])
+    // -------------------------
+    for (var j = 0; j < nBuyer; j++) {
+        claimBuyHasher[j] = Poseidon(6);
+        claimBuyHasher[j].inputs[0] <== CLAIMBUY_TAG;
+        claimBuyHasher[j].inputs[1] <== epoch;
+        claimBuyHasher[j].inputs[2] <== bid[j];
+        claimBuyHasher[j].inputs[3] <== claimBuy[j];
+        claimBuyHasher[j].inputs[4] <== rClaimBuy[j];
+        claimBuyHasher[j].inputs[5] <== saltClaimBuy[j];
+        mClaimBuy[j] === claimBuyHasher[j].out;
+    }
+
+    // -------------------------
+    // 4. Seller actual commitment + payout checks
     // mActualSell[i] = Poseidon([ACTSELL, epoch, sid, sellActual, rSell, saltSell])
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
@@ -96,7 +144,7 @@ template Settlement(nSeller, nBuyer) {
     }
 
     // -------------------------
-    // 3. Buyer commitment + internal payment
+    // 5. Buyer actual commitment + internal payment
     // mActualBuy[j] = Poseidon([ACTBUY, epoch, bid, buyActual, rBuy, saltBuy])
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
@@ -113,7 +161,7 @@ template Settlement(nSeller, nBuyer) {
     }
 
     // -------------------------
-    // 4. Seller accumulation
+    // 6. Seller accumulation
     // -------------------------
     sellerAcc[0] <== 0;
     for (var i = 0; i < nSeller; i++) {
@@ -122,7 +170,7 @@ template Settlement(nSeller, nBuyer) {
     sellerSum <== sellerAcc[nSeller];
 
     // -------------------------
-    // 5. Buyer accumulation
+    // 7. Buyer accumulation
     // -------------------------
     buyerAcc[0] <== 0;
     for (var j = 0; j < nBuyer; j++) {
@@ -131,7 +179,7 @@ template Settlement(nSeller, nBuyer) {
     buyerSum <== buyerAcc[nBuyer];
 
     // -------------------------
-    // 6. Compare sellerSum / buyerSum
+    // 8. Compare sellerSum / buyerSum
     // -------------------------
     ltCmp.in[0] <== sellerSum;
     ltCmp.in[1] <== buyerSum;
@@ -144,13 +192,13 @@ template Settlement(nSeller, nBuyer) {
     sellerGtBuyer <== 1 - sellerLtBuyer - sellerEqBuyer;
 
     // -------------------------
-    // 7. Sign constraints
+    // 9. Sign constraints
     // -------------------------
     balDSOSign * (balDSOSign - 1) === 0;
     balDSOSign === sellerGtBuyer;
 
     // -------------------------
-    // 8. Absolute difference
+    // 10. Absolute difference
     // -------------------------
     diffPayCase <== sellerSum - buyerSum;
     diffRecvCase <== buyerSum - sellerSum;

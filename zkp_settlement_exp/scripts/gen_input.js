@@ -17,6 +17,8 @@ async function main() {
   // domain tags
   // -------------------------
   const PRICE = 297481622096n;
+  const CLAIMSELL = 1407448440113608084547n;
+  const CLAIMBUY = 6437124142104923203n;
   const ACTSELL = 21475958864495425n;
   const ACTBUY = 98222719910721n;
 
@@ -34,29 +36,37 @@ async function main() {
   const bid = [1n];
 
   // -------------------------
-  // actual energy values
+  // claim / actual energy values
+  // 目前 Phase 2 先讓 claim 與 actual 相同，先把 commitment 層補齊
   // -------------------------
   let sellActual;
   let buyActual;
 
   if (mode === "pay") {
-    // sellerSum > buyerSum -> DSO 應付 -> sign = 1
     sellActual = [9n];
     buyActual = [4n];
   } else if (mode === "receive") {
-    // sellerSum < buyerSum -> DSO 應收 -> sign = 0
     sellActual = [5n];
     buyActual = [8n];
   } else if (mode === "zero") {
-    // sellerSum = buyerSum -> abs=0, sign=0
     sellActual = [5n];
     buyActual = [5n];
   } else {
     throw new Error(`Unknown mode: ${mode}`);
   }
 
+  const claimSell = [...sellActual];
+  const claimBuy = [...buyActual];
+
+  const rClaimSell = [101n];
+  const saltClaimSell = [202n];
+
   const rSell = [111n];
   const saltSell = [222n];
+
+  const rClaimBuy = [303n];
+  const saltClaimBuy = [404n];
+
   const rBuy = [333n];
   const saltBuy = [444n];
 
@@ -66,6 +76,18 @@ async function main() {
   const H_price_epoch = F.toString(
     poseidon([PRICE, epoch, price, rPrice, saltPrice])
   );
+
+  const mClaimSell = [
+    F.toString(
+      poseidon([CLAIMSELL, epoch, sid[0], claimSell[0], rClaimSell[0], saltClaimSell[0]])
+    )
+  ];
+
+  const mClaimBuy = [
+    F.toString(
+      poseidon([CLAIMBUY, epoch, bid[0], claimBuy[0], rClaimBuy[0], saltClaimBuy[0]])
+    )
+  ];
 
   const mActualSell = [
     F.toString(
@@ -93,13 +115,13 @@ async function main() {
   let balDSOSign;
 
   if (dsoDiff > 0n) {
-    balDSOSign = 1n;  // DSO 應付
+    balDSOSign = 1n; // DSO 應付
     balDSOAbs = dsoDiff;
   } else if (dsoDiff < 0n) {
-    balDSOSign = 0n;  // DSO 應收
+    balDSOSign = 0n; // DSO 應收
     balDSOAbs = -dsoDiff;
   } else {
-    balDSOSign = 0n;  // zero case
+    balDSOSign = 0n;
     balDSOAbs = 0n;
   }
 
@@ -107,6 +129,8 @@ async function main() {
     // public inputs
     epoch: epoch.toString(),
     H_price_epoch,
+    mClaimSell: mClaimSell.map(String),
+    mClaimBuy: mClaimBuy.map(String),
     mActualSell: mActualSell.map(String),
     mActualBuy: mActualBuy.map(String),
     payToSeller: payToSeller.map((x) => x.toString()),
@@ -119,17 +143,25 @@ async function main() {
     saltPrice: saltPrice.toString(),
 
     sid: sid.map((x) => x.toString()),
+    claimSell: claimSell.map((x) => x.toString()),
+    rClaimSell: rClaimSell.map((x) => x.toString()),
+    saltClaimSell: saltClaimSell.map((x) => x.toString()),
+
     sellActual: sellActual.map((x) => x.toString()),
     rSell: rSell.map((x) => x.toString()),
     saltSell: saltSell.map((x) => x.toString()),
 
     bid: bid.map((x) => x.toString()),
+    claimBuy: claimBuy.map((x) => x.toString()),
+    rClaimBuy: rClaimBuy.map((x) => x.toString()),
+    saltClaimBuy: saltClaimBuy.map((x) => x.toString()),
+
     buyActual: buyActual.map((x) => x.toString()),
     rBuy: rBuy.map((x) => x.toString()),
     saltBuy: saltBuy.map((x) => x.toString())
   };
 
-  const outDir = path.join("inputs", "generated", `phase1_signed_1_1_${mode}`);
+  const outDir = path.join("inputs", "generated", `phase2_signed_1_1_${mode}`);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outPath = path.join(outDir, "input.json");
