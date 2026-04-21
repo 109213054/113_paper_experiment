@@ -5,6 +5,8 @@ include "../third_party/circomlib/circuits/poseidon.circom";
 template Settlement(nSeller, nBuyer) {
     // public inputs
     signal input H_price_epoch;
+    signal input mActualSell[nSeller];
+    signal input mActualBuy[nBuyer]; 
     signal input payToSeller[nSeller];
     signal input balDSOAbs;
 
@@ -12,8 +14,16 @@ template Settlement(nSeller, nBuyer) {
     signal input price;
     signal input rPrice;
     signal input saltPrice;
+    
+    signal input sid[nSeller];
     signal input sellActual[nSeller];
+    signal input rSell[nSeller];
+    signal input saltSell[nSeller]; 
+
+    signal input bid[nBuyer];
     signal input buyActual[nBuyer];
+    signal input rBuy[nBuyer];
+    signal input saltBuy[nBuyer]; 
 
     signal buyerPay[nBuyer];
     signal sellerAcc[nSeller + 1];
@@ -21,39 +31,54 @@ template Settlement(nSeller, nBuyer) {
     signal sellerSum;
     signal buyerSum;
 
-    // Price commitment check
     component priceHasher = Poseidon(3);
+    component sellHasher[nSeller];
+    component buyHasher[nBuyer]; 
+
+    // Price commitment check
     priceHasher.inputs[0] <== price;
     priceHasher.inputs[1] <== rPrice;
     priceHasher.inputs[2] <== saltPrice;
     H_price_epoch === priceHasher.out;
 
-    // Seller payout checks
+    // Seller commitment + payout checks
     for (var i = 0; i < nSeller; i++) {
-        payToSeller[i] === sellActual[i] * price;
+        sellHasher[i] = Poseidon(4);
+        sellHasher[i].inputs[0] <== sid[i];
+        sellHasher[i].inputs[1] <== sellActual[i];
+        sellHasher[i].inputs[2] <== rSell[i];
+        sellHasher[i].inputs[3] <== saltSell[i];
+        mActualSell[i] === sellHasher[i].out;
+
+        payToSeller[i] === sellActual[i] * price; 
     }
 
-    // Buyer payment checks
+    // buyer commitments + internal payment
     for (var j = 0; j < nBuyer; j++) {
+        buyHasher[j] = Poseidon(4);
+        buyHasher[j].inputs[0] <== bid[j];
+        buyHasher[j].inputs[1] <== buyActual[j];
+        buyHasher[j].inputs[2] <== rBuy[j];
+        buyHasher[j].inputs[3] <== saltBuy[j];
+        mActualBuy[j] === buyHasher[j].out;
+
         buyerPay[j] <== buyActual[j] * price;
     }
 
-    // Seller accumulation
+    // seller accumulation
     sellerAcc[0] <== 0;
     for (var i = 0; i < nSeller; i++) {
         sellerAcc[i + 1] <== sellerAcc[i] + payToSeller[i];
     }
     sellerSum <== sellerAcc[nSeller];
 
-    // Buyer accumulation
+    // buyer accumulation
     buyerAcc[0] <== 0;
     for (var j = 0; j < nBuyer; j++) {
         buyerAcc[j + 1] <== buyerAcc[j] + buyerPay[j];
     }
     buyerSum <== buyerAcc[nBuyer];
 
-    // Settlement balance check
+    // settlement balance
     balDSOAbs === buyerSum - sellerSum;
 }
-
-
