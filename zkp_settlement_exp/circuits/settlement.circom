@@ -28,25 +28,27 @@ template Settlement(nSeller, nBuyer) {
     signal input saltPrice;
 
     // seller claim layer
-    signal input sid[nSeller];
+    signal input offerId[nSeller];
     signal input claimSell[nSeller];
-    signal input rClaimSell[nSeller];
+    signal input tSellClaim[nSeller];
     signal input saltClaimSell[nSeller];
 
     // seller actual layer
+    signal input sellMeterId[nSeller];
     signal input sellActual[nSeller];
-    signal input rSell[nSeller];
+    signal input tSellActual[nSeller];
     signal input saltSell[nSeller];
 
     // buyer claim layer
-    signal input bid[nBuyer];
+    signal input orderId[nBuyer];
     signal input claimBuy[nBuyer];
-    signal input rClaimBuy[nBuyer];
+    signal input tBuyClaim[nBuyer];
     signal input saltClaimBuy[nBuyer];
 
     // buyer actual layer
+    signal input buyMeterId[nBuyer];
     signal input buyActual[nBuyer];
-    signal input rBuy[nBuyer];
+    signal input tBuyActual[nBuyer];
     signal input saltBuy[nBuyer];
 
     // -------------------------
@@ -126,43 +128,47 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 2. Seller claim commitment
+    // mClaimSell[i] = Poseidon([CLAIMSELL, epoch, offerId, claimSell, tSellClaim, saltClaimSell])
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
         claimSellHasher[i] = Poseidon(6);
         claimSellHasher[i].inputs[0] <== CLAIMSELL_TAG;
         claimSellHasher[i].inputs[1] <== epoch;
-        claimSellHasher[i].inputs[2] <== sid[i];
+        claimSellHasher[i].inputs[2] <== offerId[i];
         claimSellHasher[i].inputs[3] <== claimSell[i];
-        claimSellHasher[i].inputs[4] <== rClaimSell[i];
+        claimSellHasher[i].inputs[4] <== tSellClaim[i];
         claimSellHasher[i].inputs[5] <== saltClaimSell[i];
         mClaimSell[i] === claimSellHasher[i].out;
     }
 
     // -------------------------
     // 3. Buyer claim commitment
+    // mClaimBuy[j] = Poseidon([CLAIMBUY, epoch, orderId, claimBuy, tBuyClaim, saltClaimBuy])
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
         claimBuyHasher[j] = Poseidon(6);
         claimBuyHasher[j].inputs[0] <== CLAIMBUY_TAG;
         claimBuyHasher[j].inputs[1] <== epoch;
-        claimBuyHasher[j].inputs[2] <== bid[j];
+        claimBuyHasher[j].inputs[2] <== orderId[j];
         claimBuyHasher[j].inputs[3] <== claimBuy[j];
-        claimBuyHasher[j].inputs[4] <== rClaimBuy[j];
+        claimBuyHasher[j].inputs[4] <== tBuyClaim[j];
         claimBuyHasher[j].inputs[5] <== saltClaimBuy[j];
         mClaimBuy[j] === claimBuyHasher[j].out;
     }
 
     // -------------------------
     // 4. Seller actual commitment + payout checks
+    // mActualSell[i] = Poseidon([ACTSELL, epoch, offerId, sellMeterId, sellActual, tSellActual, saltSell])
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
-        sellHasher[i] = Poseidon(6);
+        sellHasher[i] = Poseidon(7);
         sellHasher[i].inputs[0] <== ACTSELL_TAG;
         sellHasher[i].inputs[1] <== epoch;
-        sellHasher[i].inputs[2] <== sid[i];
-        sellHasher[i].inputs[3] <== sellActual[i];
-        sellHasher[i].inputs[4] <== rSell[i];
-        sellHasher[i].inputs[5] <== saltSell[i];
+        sellHasher[i].inputs[2] <== offerId[i];
+        sellHasher[i].inputs[3] <== sellMeterId[i];
+        sellHasher[i].inputs[4] <== sellActual[i];
+        sellHasher[i].inputs[5] <== tSellActual[i];
+        sellHasher[i].inputs[6] <== saltSell[i];
         mActualSell[i] === sellHasher[i].out;
 
         payToSeller[i] === sellActual[i] * price;
@@ -170,15 +176,17 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 5. Buyer actual commitment + internal payment
+    // mActualBuy[j] = Poseidon([ACTBUY, epoch, orderId, buyMeterId, buyActual, tBuyActual, saltBuy])
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
-        buyHasher[j] = Poseidon(6);
+        buyHasher[j] = Poseidon(7);
         buyHasher[j].inputs[0] <== ACTBUY_TAG;
         buyHasher[j].inputs[1] <== epoch;
-        buyHasher[j].inputs[2] <== bid[j];
-        buyHasher[j].inputs[3] <== buyActual[j];
-        buyHasher[j].inputs[4] <== rBuy[j];
-        buyHasher[j].inputs[5] <== saltBuy[j];
+        buyHasher[j].inputs[2] <== orderId[j];
+        buyHasher[j].inputs[3] <== buyMeterId[j];
+        buyHasher[j].inputs[4] <== buyActual[j];
+        buyHasher[j].inputs[5] <== tBuyActual[j];
+        buyHasher[j].inputs[6] <== saltBuy[j];
         mActualBuy[j] === buyHasher[j].out;
 
         buyerPay[j] <== buyActual[j] * price;
@@ -186,73 +194,53 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 6. Range checks + sell classification
-    // 0 -> Actual <= Claim
-    // 1 -> Actual > Claim
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
-        // range check: 64 bits
         sellActualBits[i] = Num2Bits(64);
         sellActualBits[i].in <== sellActual[i];
 
         claimSellBits[i] = Num2Bits(64);
         claimSellBits[i].in <== claimSell[i];
 
-        // compare: sellActual < claimSell
         sellLtCmp[i] = LessThan(64);
         sellLtCmp[i].in[0] <== sellActual[i];
         sellLtCmp[i].in[1] <== claimSell[i];
         sellLt[i] <== sellLtCmp[i].out;
 
-        // compare: sellActual == claimSell
         sellEqCmp[i] = IsEqual();
         sellEqCmp[i].in[0] <== sellActual[i];
         sellEqCmp[i].in[1] <== claimSell[i];
         sellEq[i] <== sellEqCmp[i].out;
 
-        // <= 由 < 或 == 組成
         sellLeq[i] <== sellLt[i] + sellEq[i];
 
-        // sellCase must be bit
         sellCase[i] * (sellCase[i] - 1) === 0;
-
-        // 0 -> Actual <= Claim
-        // 1 -> Actual > Claim
         sellCase[i] === 1 - sellLeq[i];
     }
 
     // -------------------------
     // 7. Range checks + buy classification
-    // 0 -> Actual <= Claim
-    // 1 -> Actual > Claim
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
-        // range check: 64 bits
         buyActualBits[j] = Num2Bits(64);
         buyActualBits[j].in <== buyActual[j];
 
         claimBuyBits[j] = Num2Bits(64);
         claimBuyBits[j].in <== claimBuy[j];
 
-        // compare: buyActual < claimBuy
         buyLtCmp[j] = LessThan(64);
         buyLtCmp[j].in[0] <== buyActual[j];
         buyLtCmp[j].in[1] <== claimBuy[j];
         buyLt[j] <== buyLtCmp[j].out;
 
-        // compare: buyActual == claimBuy
         buyEqCmp[j] = IsEqual();
         buyEqCmp[j].in[0] <== buyActual[j];
         buyEqCmp[j].in[1] <== claimBuy[j];
         buyEq[j] <== buyEqCmp[j].out;
 
-        // <= 由 < 或 == 組成
         buyLeq[j] <== buyLt[j] + buyEq[j];
 
-        // buyCase must be bit
         buyCase[j] * (buyCase[j] - 1) === 0;
-
-        // 0 -> Actual <= Claim
-        // 1 -> Actual > Claim
         buyCase[j] === 1 - buyLeq[j];
     }
 
@@ -303,8 +291,5 @@ template Settlement(nSeller, nBuyer) {
     selectedRecvCase <== sellerLtBuyer * diffRecvCase;
 
     balDSOAbs === selectedPayCase + selectedRecvCase;
-
-    // When sellerEqBuyer, balDSOAbs must be 0
     sellerEqBuyer * balDSOAbs === 0;
 }
-

@@ -30,61 +30,56 @@ async function main() {
   const saltPrice = 456n;
 
   // -------------------------
-  // IDs
+  // IDs and timestamps
   // -------------------------
-  const sid = [1n];
-  const bid = [1n];
+  const offerId = [1001n];
+  const orderId = [2001n];
+
+  const sellMeterId = [3001n];
+  const buyMeterId = [4001n];
+
+  const tSellClaim = [10001n];
+  const tBuyClaim = [10002n];
+  const tSellActual = [10011n];
+  const tBuyActual = [10012n];
 
   // -------------------------
   // claim / actual values
-  // 預設 Phase 3 要能測不同分類情況
   // -------------------------
   let claimSell, sellActual, claimBuy, buyActual;
 
   if (mode === "receive") {
-    // DSO 應收: sellerSum < buyerSum
     claimSell = [6n];
     sellActual = [5n]; // sellCase = 0
     claimBuy = [8n];
     buyActual = [8n];  // buyCase = 0
   } else if (mode === "pay") {
-    // DSO 應付: sellerSum > buyerSum
     claimSell = [10n];
     sellActual = [9n]; // sellCase = 0
     claimBuy = [5n];
     buyActual = [4n];  // buyCase = 0
   } else if (mode === "zero") {
-    // DSO 差額為 0
     claimSell = [5n];
-    sellActual = [5n]; // sellCase = 0
+    sellActual = [5n];
     claimBuy = [5n];
-    buyActual = [5n];  // buyCase = 0
+    buyActual = [5n];
   } else if (mode === "classify1") {
-    // sellCase = 1, buyCase = 0
     claimSell = [7n];
-    sellActual = [9n]; // > -> 1
+    sellActual = [9n]; // sellCase = 1
     claimBuy = [8n];
-    buyActual = [8n];  // <= -> 0
+    buyActual = [8n];  // buyCase = 0
   } else if (mode === "classify2") {
-    // sellCase = 0, buyCase = 1
     claimSell = [9n];
-    sellActual = [9n]; // <= -> 0
+    sellActual = [9n]; // sellCase = 0
     claimBuy = [5n];
-    buyActual = [7n];  // > -> 1
+    buyActual = [7n];  // buyCase = 1
   } else {
     throw new Error(`Unknown mode: ${mode}`);
   }
 
-  const rClaimSell = [101n];
   const saltClaimSell = [202n];
-
-  const rSell = [111n];
   const saltSell = [222n];
-
-  const rClaimBuy = [303n];
   const saltClaimBuy = [404n];
-
-  const rBuy = [333n];
   const saltBuy = [444n];
 
   // -------------------------
@@ -96,32 +91,60 @@ async function main() {
 
   const mClaimSell = [
     F.toString(
-      poseidon([CLAIMSELL, epoch, sid[0], claimSell[0], rClaimSell[0], saltClaimSell[0]])
+      poseidon([
+        CLAIMSELL,
+        epoch,
+        offerId[0],
+        claimSell[0],
+        tSellClaim[0],
+        saltClaimSell[0]
+      ])
     )
   ];
 
   const mClaimBuy = [
     F.toString(
-      poseidon([CLAIMBUY, epoch, bid[0], claimBuy[0], rClaimBuy[0], saltClaimBuy[0]])
+      poseidon([
+        CLAIMBUY,
+        epoch,
+        orderId[0],
+        claimBuy[0],
+        tBuyClaim[0],
+        saltClaimBuy[0]
+      ])
     )
   ];
 
   const mActualSell = [
     F.toString(
-      poseidon([ACTSELL, epoch, sid[0], sellActual[0], rSell[0], saltSell[0]])
+      poseidon([
+        ACTSELL,
+        epoch,
+        offerId[0],
+        sellMeterId[0],
+        sellActual[0],
+        tSellActual[0],
+        saltSell[0]
+      ])
     )
   ];
 
   const mActualBuy = [
     F.toString(
-      poseidon([ACTBUY, epoch, bid[0], buyActual[0], rBuy[0], saltBuy[0]])
+      poseidon([
+        ACTBUY,
+        epoch,
+        orderId[0],
+        buyMeterId[0],
+        buyActual[0],
+        tBuyActual[0],
+        saltBuy[0]
+      ])
     )
   ];
 
   // -------------------------
   // classification bits
-  // 0 -> Actual <= Claim
-  // 1 -> Actual > Claim
   // -------------------------
   const sellCase = [
     sellActual[0] <= claimSell[0] ? "0" : "1"
@@ -145,10 +168,10 @@ async function main() {
   let balDSOSign;
 
   if (dsoDiff > 0n) {
-    balDSOSign = 1n; // DSO 應付
+    balDSOSign = 1n;
     balDSOAbs = dsoDiff;
   } else if (dsoDiff < 0n) {
-    balDSOSign = 0n; // DSO 應收
+    balDSOSign = 0n;
     balDSOAbs = -dsoDiff;
   } else {
     balDSOSign = 0n;
@@ -174,26 +197,28 @@ async function main() {
     rPrice: rPrice.toString(),
     saltPrice: saltPrice.toString(),
 
-    sid: sid.map((x) => x.toString()),
+    offerId: offerId.map((x) => x.toString()),
     claimSell: claimSell.map((x) => x.toString()),
-    rClaimSell: rClaimSell.map((x) => x.toString()),
+    tSellClaim: tSellClaim.map((x) => x.toString()),
     saltClaimSell: saltClaimSell.map((x) => x.toString()),
 
+    sellMeterId: sellMeterId.map((x) => x.toString()),
     sellActual: sellActual.map((x) => x.toString()),
-    rSell: rSell.map((x) => x.toString()),
+    tSellActual: tSellActual.map((x) => x.toString()),
     saltSell: saltSell.map((x) => x.toString()),
 
-    bid: bid.map((x) => x.toString()),
+    orderId: orderId.map((x) => x.toString()),
     claimBuy: claimBuy.map((x) => x.toString()),
-    rClaimBuy: rClaimBuy.map((x) => x.toString()),
+    tBuyClaim: tBuyClaim.map((x) => x.toString()),
     saltClaimBuy: saltClaimBuy.map((x) => x.toString()),
 
+    buyMeterId: buyMeterId.map((x) => x.toString()),
     buyActual: buyActual.map((x) => x.toString()),
-    rBuy: rBuy.map((x) => x.toString()),
+    tBuyActual: tBuyActual.map((x) => x.toString()),
     saltBuy: saltBuy.map((x) => x.toString())
   };
 
-  const outDir = path.join("inputs", "generated", `phase3_signed_1_1_${mode}`);
+  const outDir = path.join("inputs", "generated", `phase3_msgfmt_1_1_${mode}`);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outPath = path.join(outDir, "input.json");
@@ -208,3 +233,4 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
