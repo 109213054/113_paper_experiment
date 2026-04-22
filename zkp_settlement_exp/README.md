@@ -63,6 +63,9 @@ The current Phase 3 minimal runnable version supports:
 - `results/figures/` : Generated figures
 - `docs/notes/` : Experiment notes and planning records
 - `ptau/` : Powers of Tau files (ignored by Git)
+- `scripts/gen_input_debug.js` : fixed `(1,1)` debug / handoff input generator
+- `scripts/gen_input_experiment.js` : scalable experiment input generator for future variable `(nSeller, nBuyer)` experiments
+- `scripts/run_one.sh` : one-command minimal runnable flow for Phase 3 handoff
 
 ## 5. Current Development Status
 - [x] Linux / Docker environment setup
@@ -132,4 +135,13 @@ The following parts are not yet implemented in this handoff version:
 - automatic metric collection
 - plotting / final result figures
 
+
+### How To Run
+The current minimal runnable handoff flow uses:
+- `scripts/gen_input_debug.js`
+- `scripts/run_one.sh`
+
+The future scalable experiment flow will use:
+- `scripts/gen_input_experiment.js`
+- `scripts/run_batch.sh`
 
