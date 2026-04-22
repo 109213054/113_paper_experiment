@@ -2,6 +2,7 @@ pragma circom 2.1.6;
 
 include "../third_party/circomlib/circuits/poseidon.circom";
 include "../third_party/circomlib/circuits/comparators.circom";
+include "../third_party/circomlib/circuits/bitify.circom";
 
 template Settlement(nSeller, nBuyer) {
     // -------------------------
@@ -13,6 +14,8 @@ template Settlement(nSeller, nBuyer) {
     signal input mClaimBuy[nBuyer];
     signal input mActualSell[nSeller];
     signal input mActualBuy[nBuyer];
+    signal input sellCase[nSeller];   // 0 -> Actual <= Claim, 1 -> Actual > Claim
+    signal input buyCase[nBuyer];     // 0 -> Actual <= Claim, 1 -> Actual > Claim
     signal input payToSeller[nSeller];
     signal input balDSOAbs;
     signal input balDSOSign;   // 0 = DSO 應收, 1 = DSO 應付
@@ -73,6 +76,16 @@ template Settlement(nSeller, nBuyer) {
     signal selectedPayCase;
     signal selectedRecvCase;
 
+    // sell compare internals
+    signal sellLt[nSeller];
+    signal sellEq[nSeller];
+    signal sellLeq[nSeller];
+
+    // buy compare internals
+    signal buyLt[nBuyer];
+    signal buyEq[nBuyer];
+    signal buyLeq[nBuyer];
+
     // -------------------------
     // components
     // -------------------------
@@ -82,6 +95,21 @@ template Settlement(nSeller, nBuyer) {
     component sellHasher[nSeller];
     component buyHasher[nBuyer];
 
+    // range check
+    component sellActualBits[nSeller];
+    component claimSellBits[nSeller];
+    component buyActualBits[nBuyer];
+    component claimBuyBits[nBuyer];
+
+    // sell compare
+    component sellLtCmp[nSeller];
+    component sellEqCmp[nSeller];
+
+    // buy compare
+    component buyLtCmp[nBuyer];
+    component buyEqCmp[nBuyer];
+
+    // DSO compare
     component ltCmp = LessThan(64);
     component eqCmp = IsEqual();
 
@@ -98,7 +126,6 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 2. Seller claim commitment
-    // mClaimSell[i] = Poseidon([CLAIMSELL, epoch, sid, claimSell, rClaimSell, saltClaimSell])
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
         claimSellHasher[i] = Poseidon(6);
@@ -113,7 +140,6 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 3. Buyer claim commitment
-    // mClaimBuy[j] = Poseidon([CLAIMBUY, epoch, bid, claimBuy, rClaimBuy, saltClaimBuy])
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
         claimBuyHasher[j] = Poseidon(6);
@@ -128,7 +154,6 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 4. Seller actual commitment + payout checks
-    // mActualSell[i] = Poseidon([ACTSELL, epoch, sid, sellActual, rSell, saltSell])
     // -------------------------
     for (var i = 0; i < nSeller; i++) {
         sellHasher[i] = Poseidon(6);
@@ -145,7 +170,6 @@ template Settlement(nSeller, nBuyer) {
 
     // -------------------------
     // 5. Buyer actual commitment + internal payment
-    // mActualBuy[j] = Poseidon([ACTBUY, epoch, bid, buyActual, rBuy, saltBuy])
     // -------------------------
     for (var j = 0; j < nBuyer; j++) {
         buyHasher[j] = Poseidon(6);
@@ -161,7 +185,79 @@ template Settlement(nSeller, nBuyer) {
     }
 
     // -------------------------
-    // 6. Seller accumulation
+    // 6. Range checks + sell classification
+    // 0 -> Actual <= Claim
+    // 1 -> Actual > Claim
+    // -------------------------
+    for (var i = 0; i < nSeller; i++) {
+        // range check: 64 bits
+        sellActualBits[i] = Num2Bits(64);
+        sellActualBits[i].in <== sellActual[i];
+
+        claimSellBits[i] = Num2Bits(64);
+        claimSellBits[i].in <== claimSell[i];
+
+        // compare: sellActual < claimSell
+        sellLtCmp[i] = LessThan(64);
+        sellLtCmp[i].in[0] <== sellActual[i];
+        sellLtCmp[i].in[1] <== claimSell[i];
+        sellLt[i] <== sellLtCmp[i].out;
+
+        // compare: sellActual == claimSell
+        sellEqCmp[i] = IsEqual();
+        sellEqCmp[i].in[0] <== sellActual[i];
+        sellEqCmp[i].in[1] <== claimSell[i];
+        sellEq[i] <== sellEqCmp[i].out;
+
+        // <= 由 < 或 == 組成
+        sellLeq[i] <== sellLt[i] + sellEq[i];
+
+        // sellCase must be bit
+        sellCase[i] * (sellCase[i] - 1) === 0;
+
+        // 0 -> Actual <= Claim
+        // 1 -> Actual > Claim
+        sellCase[i] === 1 - sellLeq[i];
+    }
+
+    // -------------------------
+    // 7. Range checks + buy classification
+    // 0 -> Actual <= Claim
+    // 1 -> Actual > Claim
+    // -------------------------
+    for (var j = 0; j < nBuyer; j++) {
+        // range check: 64 bits
+        buyActualBits[j] = Num2Bits(64);
+        buyActualBits[j].in <== buyActual[j];
+
+        claimBuyBits[j] = Num2Bits(64);
+        claimBuyBits[j].in <== claimBuy[j];
+
+        // compare: buyActual < claimBuy
+        buyLtCmp[j] = LessThan(64);
+        buyLtCmp[j].in[0] <== buyActual[j];
+        buyLtCmp[j].in[1] <== claimBuy[j];
+        buyLt[j] <== buyLtCmp[j].out;
+
+        // compare: buyActual == claimBuy
+        buyEqCmp[j] = IsEqual();
+        buyEqCmp[j].in[0] <== buyActual[j];
+        buyEqCmp[j].in[1] <== claimBuy[j];
+        buyEq[j] <== buyEqCmp[j].out;
+
+        // <= 由 < 或 == 組成
+        buyLeq[j] <== buyLt[j] + buyEq[j];
+
+        // buyCase must be bit
+        buyCase[j] * (buyCase[j] - 1) === 0;
+
+        // 0 -> Actual <= Claim
+        // 1 -> Actual > Claim
+        buyCase[j] === 1 - buyLeq[j];
+    }
+
+    // -------------------------
+    // 8. Seller accumulation
     // -------------------------
     sellerAcc[0] <== 0;
     for (var i = 0; i < nSeller; i++) {
@@ -170,7 +266,7 @@ template Settlement(nSeller, nBuyer) {
     sellerSum <== sellerAcc[nSeller];
 
     // -------------------------
-    // 7. Buyer accumulation
+    // 9. Buyer accumulation
     // -------------------------
     buyerAcc[0] <== 0;
     for (var j = 0; j < nBuyer; j++) {
@@ -179,7 +275,7 @@ template Settlement(nSeller, nBuyer) {
     buyerSum <== buyerAcc[nBuyer];
 
     // -------------------------
-    // 8. Compare sellerSum / buyerSum
+    // 10. Compare sellerSum / buyerSum
     // -------------------------
     ltCmp.in[0] <== sellerSum;
     ltCmp.in[1] <== buyerSum;
@@ -192,13 +288,13 @@ template Settlement(nSeller, nBuyer) {
     sellerGtBuyer <== 1 - sellerLtBuyer - sellerEqBuyer;
 
     // -------------------------
-    // 9. Sign constraints
+    // 11. Sign constraints
     // -------------------------
     balDSOSign * (balDSOSign - 1) === 0;
     balDSOSign === sellerGtBuyer;
 
     // -------------------------
-    // 10. Absolute difference
+    // 12. Absolute difference
     // -------------------------
     diffPayCase <== sellerSum - buyerSum;
     diffRecvCase <== buyerSum - sellerSum;

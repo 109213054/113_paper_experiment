@@ -3,7 +3,7 @@ const path = require("path");
 const circomlibjs = require("circomlibjs");
 
 async function main() {
-  const mode = process.argv[2] || "receive"; // receive / pay / zero
+  const mode = process.argv[2] || "receive"; // receive / pay / zero / classify1 / classify2
 
   const poseidon = await circomlibjs.buildPoseidon();
   const F = poseidon.F;
@@ -36,27 +36,44 @@ async function main() {
   const bid = [1n];
 
   // -------------------------
-  // claim / actual energy values
-  // 目前 Phase 2 先讓 claim 與 actual 相同，先把 commitment 層補齊
+  // claim / actual values
+  // 預設 Phase 3 要能測不同分類情況
   // -------------------------
-  let sellActual;
-  let buyActual;
+  let claimSell, sellActual, claimBuy, buyActual;
 
-  if (mode === "pay") {
-    sellActual = [9n];
-    buyActual = [4n];
-  } else if (mode === "receive") {
-    sellActual = [5n];
-    buyActual = [8n];
+  if (mode === "receive") {
+    // DSO 應收: sellerSum < buyerSum
+    claimSell = [6n];
+    sellActual = [5n]; // sellCase = 0
+    claimBuy = [8n];
+    buyActual = [8n];  // buyCase = 0
+  } else if (mode === "pay") {
+    // DSO 應付: sellerSum > buyerSum
+    claimSell = [10n];
+    sellActual = [9n]; // sellCase = 0
+    claimBuy = [5n];
+    buyActual = [4n];  // buyCase = 0
   } else if (mode === "zero") {
-    sellActual = [5n];
-    buyActual = [5n];
+    // DSO 差額為 0
+    claimSell = [5n];
+    sellActual = [5n]; // sellCase = 0
+    claimBuy = [5n];
+    buyActual = [5n];  // buyCase = 0
+  } else if (mode === "classify1") {
+    // sellCase = 1, buyCase = 0
+    claimSell = [7n];
+    sellActual = [9n]; // > -> 1
+    claimBuy = [8n];
+    buyActual = [8n];  // <= -> 0
+  } else if (mode === "classify2") {
+    // sellCase = 0, buyCase = 1
+    claimSell = [9n];
+    sellActual = [9n]; // <= -> 0
+    claimBuy = [5n];
+    buyActual = [7n];  // > -> 1
   } else {
     throw new Error(`Unknown mode: ${mode}`);
   }
-
-  const claimSell = [...sellActual];
-  const claimBuy = [...buyActual];
 
   const rClaimSell = [101n];
   const saltClaimSell = [202n];
@@ -102,6 +119,19 @@ async function main() {
   ];
 
   // -------------------------
+  // classification bits
+  // 0 -> Actual <= Claim
+  // 1 -> Actual > Claim
+  // -------------------------
+  const sellCase = [
+    sellActual[0] <= claimSell[0] ? "0" : "1"
+  ];
+
+  const buyCase = [
+    buyActual[0] <= claimBuy[0] ? "0" : "1"
+  ];
+
+  // -------------------------
   // settlement values
   // -------------------------
   const payToSeller = [sellActual[0] * price];
@@ -133,6 +163,8 @@ async function main() {
     mClaimBuy: mClaimBuy.map(String),
     mActualSell: mActualSell.map(String),
     mActualBuy: mActualBuy.map(String),
+    sellCase,
+    buyCase,
     payToSeller: payToSeller.map((x) => x.toString()),
     balDSOAbs: balDSOAbs.toString(),
     balDSOSign: balDSOSign.toString(),
@@ -161,7 +193,7 @@ async function main() {
     saltBuy: saltBuy.map((x) => x.toString())
   };
 
-  const outDir = path.join("inputs", "generated", `phase2_signed_1_1_${mode}`);
+  const outDir = path.join("inputs", "generated", `phase3_signed_1_1_${mode}`);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outPath = path.join(outDir, "input.json");
@@ -176,4 +208,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
