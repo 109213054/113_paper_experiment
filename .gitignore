@@ -22,6 +22,7 @@ public.json
 ptau/
 inputs/
 build/
+circuits/main/generated/ 
 
 # Optional: third-party node stuff inside circomlib
 third_party/circomlib/node_modules/
