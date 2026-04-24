@@ -29,6 +29,9 @@ RUN git clone https://github.com/iden3/circom.git /opt/circom && \
     cargo build --release && \
     cp target/release/circom /usr/local/bin/circom
 
+# draw
+RUN pip3 install matplotlib numpy pandas
+
 WORKDIR /workspace
 
 CMD ["/bin/bash"]
