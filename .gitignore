@@ -38,3 +38,8 @@ out/
 # Large generated results
 results/raw/*.tmp
 
+# Gas experiment Hardhat local files
+gas_cost_exp/hardhat/.env
+gas_cost_exp/hardhat/artifacts/
+gas_cost_exp/hardhat/cache/
+gas_cost_exp/zkp/circuits/main/generated/
