@@ -1,0 +1,11 @@
+{
+  "metric": "Gas_settlement_success",
+  "network": "kurtosis",
+  "experimentN": 10,
+  "settlementAddress": "0x9f9f5fd89ad648f2c000c954d8d9c87743243ec5",
+  "verifierAddress": "0x0643d39d47cf0ea95dbea69bf11a7f8c4bc34968",
+  "roundId": "1",
+  "txHash": "0x8277241aefde5f57e62c6d823f6285b4045b3047bfcf1c46922aed8e2c694a51",
+  "gasUsed": "22985",
+  "emittedRoundId": "1"
+}

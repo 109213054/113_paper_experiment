@@ -3,6 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Taipei
 
+# Base system tools
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -10,14 +11,19 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     python3 \
     python3-pip \
+    python3-venv \
     jq \
     ca-certificates \
+    libgmp-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 20
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+# Install Node.js 22 LTS
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get update && apt-get install -y nodejs && \
-    npm install -g snarkjs
+    rm -rf /var/lib/apt/lists/*
+
+# Install global ZKP tool
+RUN npm install -g snarkjs
 
 # Install Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
@@ -29,8 +35,8 @@ RUN git clone https://github.com/iden3/circom.git /opt/circom && \
     cargo build --release && \
     cp target/release/circom /usr/local/bin/circom
 
-# draw
-RUN pip3 install matplotlib numpy pandas
+# Python packages for plotting / result processing
+RUN pip3 install --no-cache-dir matplotlib numpy pandas
 
 WORKDIR /workspace
 

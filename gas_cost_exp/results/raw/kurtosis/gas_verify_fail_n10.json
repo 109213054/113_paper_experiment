@@ -1,0 +1,14 @@
+{
+  "metric": "Gas_verify_fail",
+  "network": "kurtosis",
+  "experimentN": 10,
+  "settlementAddress": "0x9f9f5fd89ad648f2c000c954d8d9c87743243ec5",
+  "verifierAddress": "0x0643d39d47cf0ea95dbea69bf11a7f8c4bc34968",
+  "proofPath": "../zkp/proofs/n_10/proof.json",
+  "publicPath": "../zkp/proofs/n_10/public_fail.json",
+  "txHash": "0x1d48a19b941c4b20ae34a1f4504d54b7431bef3fbbbc96ec2c6626e85d421e36",
+  "gasUsed": "727901",
+  "expectedDirectVerify": false,
+  "expectedSettlementSimulate": false,
+  "eventOk": false
+}

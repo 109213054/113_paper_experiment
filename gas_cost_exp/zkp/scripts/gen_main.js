@@ -23,7 +23,19 @@ function main() {
 
 include "../../settlement.circom";
 
-component main = Settlement(${nSeller}, ${nBuyer});
+component main {public [
+  epoch,
+  H_price_epoch,
+  mClaimSell,
+  mClaimBuy,
+  mActualSell,
+  mActualBuy,
+  sellCase,
+  buyCase,
+  payToSeller,
+  balDSOAbs,
+  balDSOSign
+]} = Settlement(${nSeller}, ${nBuyer});
 `;
 
   fs.writeFileSync(outPath, content, "utf8");
@@ -39,4 +51,3 @@ try {
   console.error(err.message);
   process.exit(1);
 }
-
