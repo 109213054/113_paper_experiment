@@ -49,13 +49,23 @@ def main():
     rows = load_csv_rows(CSV_PATH)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True, sharey=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     found_any = False
 
-    for idx, buyer in enumerate(FIXED_BUYERS):
-        ax = axes[idx]
+    markers = {
+        10: "o",
+        20: "s",
+        30: "^",
+    }
 
+    colors = {
+        10: "tab:blue",
+        20: "tab:orange",
+        30: "tab:green",
+    }
+
+    for buyer in FIXED_BUYERS:
         filtered = [
             row for row in rows
             if row["fixed_role"] == "buyer"
@@ -73,21 +83,26 @@ def main():
         if xs:
             found_any = True
 
-            ax.plot(xs, ys, marker="o", linewidth=2)
+            ax.plot(
+                xs,
+                ys,
+                marker=markers[buyer],
+                linewidth=2,
+                color=colors[buyer],
+                label=f"Buyer = {buyer}",
+            )
 
             for x, y in zip(xs, ys):
-                ax.text(
-                    x,
-                    y,
+                ax.annotate(
                     f"{y:.3f}",
+                    (x, y),
+                    textcoords="offset points",
+                    xytext=(0, 6),
                     fontsize=8,
                     ha="center",
                     va="bottom",
+                    color=colors[buyer],
                 )
-
-        ax.set_title(f"Buyer = {buyer}")
-        ax.tick_params(labelbottom=True)
-        ax.set_xticks(X_SELLERS)
 
     if not found_any:
         raise ValueError("No data found for fixed buyers.")
@@ -95,33 +110,19 @@ def main():
     y_min = 0.9
     y_max = 3.0
 
-    for ax in axes:
-        ax.set_ylim(y_min, y_max)
+    ax.set_ylim(y_min, y_max)
+    ax.set_xticks(X_SELLERS)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.15))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.075))
 
-        # 主刻度：0.15 s = 150 ms
-        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.15))
+    ax.grid(True, which="major", axis="y", linestyle="--", linewidth=0.7)
+    ax.grid(True, which="minor", axis="y", linestyle=":", linewidth=0.4)
+    ax.grid(True, which="major", axis="x", linestyle="--", linewidth=0.5)
 
-        # 輔助刻度：0.075 s = 75 ms
-        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.075))
-
-        # 主格線與輔助格線
-        ax.grid(True, which="major", axis="y", linestyle="--", linewidth=0.7)
-        ax.grid(True, which="minor", axis="y", linestyle=":", linewidth=0.4)
-        ax.grid(True, which="major", axis="x", linestyle="--", linewidth=0.5)
-
-    axes[-1].set_xlabel("Number of Sellers")
-    fig.text(
-        0.04,
-        0.5,
-        "Average Proving Time (s)",
-        va="center",
-        rotation="vertical",
-    )
-
-    plt.suptitle(
-        "Average Proving Time vs Number of Sellers (Fixed Buyers)",
-        y=0.92,
-    )
+    ax.set_xlabel("Number of Sellers")
+    ax.set_ylabel("Average Proving Time (s)")
+    ax.set_title("Average Proving Time vs Number of Sellers (Fixed Buyers)")
+    ax.legend()
 
     plt.savefig(OUTPUT_PATH, bbox_inches="tight")
     plt.close()
@@ -131,4 +132,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

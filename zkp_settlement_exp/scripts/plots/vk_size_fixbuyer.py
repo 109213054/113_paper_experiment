@@ -1,6 +1,7 @@
 from pathlib import Path
 import csv
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 CSV_PATH = Path("results/raw/batch_metrics_50.csv")
 OUTPUT_PATH = Path("results/figures/vk_size_fixbuyer_50.png")
@@ -48,14 +49,30 @@ def main():
     rows = load_csv_rows(CSV_PATH)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True, sharey=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     found_any = False
-    all_y_values = []
 
-    for idx, buyer in enumerate(FIXED_BUYERS):
-        ax = axes[idx]
+    hatches = {
+        10: "///",
+        20: "\\\\\\",
+        30: "xx",
+    }
 
+    colors = {
+        10: "tab:blue",
+        20: "tab:orange",
+        30: "tab:green",
+    }
+
+    bar_width = 1.5
+    offsets = {
+        10: -bar_width,
+        20: 0,
+        30: bar_width,
+    }
+
+    for buyer in FIXED_BUYERS:
         filtered = [
             row for row in rows
             if row["fixed_role"] == "buyer"
@@ -69,42 +86,58 @@ def main():
 
         xs = [x for x in X_SELLERS if x in point_map]
         ys = [point_map[x] / (1024 * 1024) for x in xs]
+        bar_xs = [x + offsets[buyer] for x in xs]
 
         if xs:
             found_any = True
-            all_y_values.extend(ys)
 
-            bars = ax.bar(xs, ys, width=3)
+            bars = ax.bar(
+                bar_xs,
+                ys,
+                width=bar_width,
+                label=f"Buyer = {buyer}",
+                facecolor="none",
+                edgecolor=colors[buyer],
+                hatch=hatches[buyer],
+                linewidth=1.5,
+            )
 
             for bar, y in zip(bars, ys):
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    y,
-                    f"{y:.5f}",
+                ax.annotate(
+                    f"{y:.6f}",
+                    (bar.get_x() + bar.get_width() / 2, y),
+                    textcoords="offset points",
+                    xytext=(0, 4),
                     ha="center",
                     va="bottom",
                     fontsize=8,
+                    color=colors[buyer],
+                    rotation=90,
                 )
-
-        ax.set_title(f"Buyer = {buyer}")
-        ax.grid(True, axis="y")
-        ax.tick_params(labelbottom=True)
-        ax.set_xticks(X_SELLERS)
 
     if not found_any:
         raise ValueError("No data found for fixed buyers.")
 
-    y_min = min(all_y_values)
-    y_max = max(all_y_values)
-    padding = (y_max - y_min) * 0.5 if y_max > y_min else 0.0005
-
-    for ax in axes:
-        ax.set_ylim(y_min - padding, y_max + padding)
-
-    axes[-1].set_xlabel("Number of Sellers")
-    fig.text(0.04, 0.5, "Verification Key Size (MB)", va="center", rotation="vertical")
-
-    plt.suptitle("Verification Key Size vs Number of Sellers (Fixed Buyers)", y=0.92)
+    ax.grid(True, axis="y")
+    ax.set_xticks(X_SELLERS)
+    ax.set_ylim(0.002588, 0.002637)
+    ax.set_yticks([
+        0.002590,
+        0.002595,
+        0.002600,
+        0.002605,
+        0.002610,
+        0.002615,
+        0.002620,
+        0.002625,
+        0.002630,
+        0.002635,
+    ])
+    ax.yaxis.set_major_formatter(FormatStrFormatter("%.6f"))
+    ax.set_xlabel("Number of Sellers")
+    ax.set_ylabel("Verification Key Size (MB)")
+    ax.set_title("Verification Key Size vs Number of Sellers (Fixed Buyers)")
+    ax.legend()
 
     plt.savefig(OUTPUT_PATH, bbox_inches="tight")
     plt.close()
@@ -114,5 +147,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

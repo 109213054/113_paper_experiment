@@ -1,15 +1,32 @@
 # OS
 .DS_Store
 
+# Node
+node_modules/
+
 # Python
 __pycache__/
 *.pyc
 .venv/
 
-# Node
-node_modules/
+# Environment files
+.env
+.env.*
+!.env.example
 
-# ZKP / Circom / snarkjs build artifacts
+# Generic build / cache
+build/
+dist/
+out/
+cache/
+artifacts/
+types/
+coverage/
+bundle/
+snapshots/
+.gas-snapshot
+
+# ZKP / Circom / snarkjs artifacts
 *.r1cs
 *.sym
 *.wasm
@@ -17,29 +34,14 @@ node_modules/
 *.wtns
 proof.json
 public.json
+public_fail.json
 
-# ZKP folders (local artifacts / setup)
+# Local setup / large generated folders
 ptau/
 inputs/
-build/
 circuits/main/generated/
 
-# Optional: third-party node stuff inside circomlib
-third_party/circomlib/node_modules/
-
-# General build folders
-build/
-dist/
-out/
-
-# Logs
-*.log
-
-# Large generated results
-results/raw/*.tmp
-
-# Gas experiment Hardhat local files
-gas_cost_exp/hardhat/.env
-gas_cost_exp/hardhat/artifacts/
-gas_cost_exp/hardhat/cache/
-gas_cost_exp/zkp/circuits/main/generated/
+# Old gas experiment projects not tracked anymore
+/gas_cost_exp/
+/gas_cost_exp_public/
+/gas_cost_exp_segmented/

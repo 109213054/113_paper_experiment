@@ -1,0 +1,66 @@
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+from pathlib import Path
+
+# Data
+buyers = [10, 20, 30, 40]
+
+ours_bytes = [17408, 31488, 45568, 59648]
+jiang_bytes = [9088, 16128, 23168, 30208]
+
+# Convert bytes to MB
+MB = 1_000_000
+ours_mb = [x / MB for x in ours_bytes]
+jiang_mb = [x / MB for x in jiang_bytes]
+
+# Plot
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    buyers,
+    ours_mb,
+    marker='o',
+    color='blue',
+    linewidth=2,
+    markersize=8,
+    label='ours'
+)
+
+plt.plot(
+    buyers,
+    jiang_mb,
+    marker='^',
+    color='orange',
+    linewidth=2,
+    markersize=8,
+    label='Jiang et al.'
+)
+
+# Add value labels
+for x, y in zip(buyers, ours_mb):
+    plt.text(x, y, f'{y:.2f}', ha='center', va='bottom', fontsize=10)
+
+for x, y in zip(buyers, jiang_mb):
+    plt.text(x, y, f'{y:.2f}', ha='center', va='bottom', fontsize=10)
+
+# Labels and title
+plt.xlabel('Number of Buyers', fontsize=12)
+plt.ylabel('Size (MB)', fontsize=12)
+plt.title('Verify Key Size Comparison', fontsize=14)
+
+# Axis settings
+plt.xticks(buyers)
+plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend()
+plt.tight_layout()
+
+# Save figure
+output_path = Path("results/figures/comparewithjiang_vk_size.png")
+output_path.parent.mkdir(parents=True, exist_ok=True)
+
+plt.savefig(output_path, dpi=300)
+plt.show()
+
+print(f"Saved figure to: {output_path}")

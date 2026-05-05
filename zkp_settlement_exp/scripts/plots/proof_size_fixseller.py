@@ -48,13 +48,23 @@ def main():
     rows = load_csv_rows(CSV_PATH)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True, sharey=True)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     found_any = False
 
-    for idx, seller in enumerate(FIXED_SELLERS):
-        ax = axes[idx]
+    markers = {
+        10: "o",
+        20: "s",
+        30: "^",
+    }
 
+    colors = {
+        10: "tab:blue",
+        20: "tab:orange",
+        30: "tab:green",
+    }
+
+    for seller in FIXED_SELLERS:
         filtered = [
             row for row in rows
             if row["fixed_role"] == "seller"
@@ -71,38 +81,36 @@ def main():
 
         if xs:
             found_any = True
+            ax.plot(
+                xs,
+                ys,
+                marker=markers[seller],
+                color=colors[seller],
+                label=f"Seller = {seller}",
+            )
 
-            ax.plot(xs, ys, marker="o")
-
-            # mean 線
-            mean_val = sum(ys) / len(ys)
-            ax.axhline(mean_val, linestyle="--", linewidth=1)
-
-        ax.set_title(f"Seller = {seller}")
-        ax.grid(True)
-
-        # 每張圖都顯示 x 軸刻度
-        ax.tick_params(labelbottom=True)
+            for x, y in zip(xs, ys):
+                ax.annotate(
+                    str(y),
+                    (x, y),
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    ha="left",
+                    fontsize=8,
+                    color=colors[seller],
+                )
 
     if not found_any:
         raise ValueError("No data found for fixed sellers.")
 
-    # 固定 y 軸範圍
-    y_min = 790
-    y_max = 830
-
-    for ax in axes:
-        ax.set_ylim(y_min, y_max)
-        ax.set_yticks(list(range(y_min, y_max + 1, 5)))
-
-    # 每張圖都設 x ticks
-    for ax in axes:
-        ax.set_xticks(X_BUYERS)
-
-    axes[-1].set_xlabel("Number of Buyers")
-    fig.text(0.04, 0.5, "Proof Size (bytes)", va='center', rotation='vertical')
-
-    plt.suptitle("Proof Size vs Number of Buyers (Fixed Sellers)", y=0.92)
+    ax.grid(True)
+    ax.set_xticks(X_BUYERS)
+    ax.set_ylim(790, 830)
+    ax.set_yticks(list(range(790, 831, 5)))
+    ax.set_xlabel("Number of Buyers")
+    ax.set_ylabel("Proof Size (bytes)")
+    ax.set_title("Proof Size vs Number of Buyers (Fixed Sellers)")
+    ax.legend()
 
     plt.savefig(OUTPUT_PATH, bbox_inches="tight")
     plt.close()
@@ -112,5 +120,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
