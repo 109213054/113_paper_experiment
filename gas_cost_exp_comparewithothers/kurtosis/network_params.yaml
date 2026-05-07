@@ -1,0 +1,17 @@
+# Placeholder for future Kurtosis package parameters.
+# This file will be used later if custom Ethereum testnet configuration is needed.
+participants:
+  - el_type: geth
+    cl_type: lighthouse
+    count: 1
+
+network_params:
+  network: kurtosis
+  prefunded_accounts: '{"0x2D014710087Ea267D70a8b8323a4E245d5e3E0b5": {"balance": "100ETH"}}'
+
+global_log_level: info
+
+additional_services: []
+
+mev_type: mock
+snooper_enabled: false

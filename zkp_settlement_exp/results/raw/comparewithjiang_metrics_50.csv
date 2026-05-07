@@ -1,0 +1,5 @@
+phase,fixed_role,fixed_value,nSeller,nBuyer,mode,proof_size_bytes,pk_size_bytes,vk_size_bytes,prove_time_ms_avg,verify_time_ms_avg
+stage1,buyer,10,1,10,balanced,808,11379310,2738,773.677,286.116
+stage1,buyer,20,1,20,balanced,805,21612862,2740,1128.053,293.484
+stage1,buyer,30,1,30,balanced,802,33943566,2738,1621.237,298.696
+stage1,buyer,40,1,40,balanced,804,42079966,2738,1808.472,296.136

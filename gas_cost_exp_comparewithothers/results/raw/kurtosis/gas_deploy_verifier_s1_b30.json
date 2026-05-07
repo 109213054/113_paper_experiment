@@ -1,0 +1,11 @@
+{
+  "metric": "Gas_deploy_verifier",
+  "network": "kurtosis",
+  "caseTag": "s1_b30",
+  "nSeller": 1,
+  "nBuyer": 30,
+  "verifierAddress": "0x102fd724e1afb137bb6ccffa3400d294d8173c29",
+  "txHash": "0x1dc63ef4f6d1b9114a540d696e5f7559e3db6bd2fb8687b0f8b22b72f0447ee9",
+  "gasUsed": "2364626",
+  "verifierFqn": "contracts/verifiers/Verifier_s1_b30.sol:Groth16Verifier"
+}

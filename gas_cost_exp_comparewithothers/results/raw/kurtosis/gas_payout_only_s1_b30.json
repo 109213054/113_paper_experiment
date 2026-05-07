@@ -1,0 +1,15 @@
+{
+  "metric": "Gas_payout_only",
+  "network": "kurtosis",
+  "caseTag": "s1_b30",
+  "nSeller": 1,
+  "nBuyer": 30,
+  "settlementAddress": "0xf17424297ac710fb8b80dcd7455df4c9c20e1ba1",
+  "verifierAddress": "0x102fd724e1afb137bb6ccffa3400d294d8173c29",
+  "txHash": "0xd48d66d4ea6c940b5eb8d47ce0edd8facaa432c63a432a6044d8dd1dd73ee9c1",
+  "gasUsed": "33762",
+  "payoutMode": "benchmarkPayoutOnly_single",
+  "payoutAmountWei": "1000000000000000",
+  "recipient": "0x0000000000000000000000000000000000000001",
+  "emittedAmount": "1000000000000000"
+}

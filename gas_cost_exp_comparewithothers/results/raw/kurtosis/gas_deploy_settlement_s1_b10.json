@@ -1,0 +1,12 @@
+{
+  "metric": "Gas_deploy_settlement",
+  "network": "kurtosis",
+  "caseTag": "s1_b10",
+  "nSeller": 1,
+  "nBuyer": 10,
+  "settlementAddress": "0x67f8c1ef48b45f0f4df46e82c9275b349899a550",
+  "verifierAddress": "0x4293ef51b433f70771cfd76b07e18d08bb30863f",
+  "settlementContractName": "SettlementBench_s1_b10",
+  "txHash": "0xff93efddcb20fa5c9f164c43efa53a34fdd0d4b1eeca7bf9c799a367d3fc0468",
+  "gasUsed": "527598"
+}

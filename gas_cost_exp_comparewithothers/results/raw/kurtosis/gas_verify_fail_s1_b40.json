@@ -1,0 +1,20 @@
+{
+  "metric": "Gas_verify_fail",
+  "network": "kurtosis",
+  "caseTag": "s1_b40",
+  "nSeller": 1,
+  "nBuyer": 40,
+  "settlementAddress": "0x5326fb8f7045d1978b8e63e6a6d34f53ac9643be",
+  "verifierAddress": "0xbefd2043824267434a3573ac55756f34dfa8faa0",
+  "proofPath": "../zkp/proofs/s1_b40/proof.json",
+  "publicPath": "../zkp/proofs/s1_b40/public_fail.json",
+  "publicSignalLength": 128,
+  "txHash": "0x44b505c885bb0ed260a7d97b9d5349de4919ffcd78187a6156031672c863b822",
+  "gasUsed": "1104071",
+  "intrinsicGas": 21000,
+  "calldataGasApprox": 52248,
+  "adjustedExecutionGasApprox": 1030823,
+  "verifyMode": "benchmarkVerifyOnly",
+  "expectedDirectVerify": false,
+  "expectedSettlementSimulate": false
+}
