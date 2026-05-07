@@ -39,7 +39,9 @@ public_fail.json
 # Local setup / large generated folders
 ptau/
 inputs/
-circuits/main/generated/
+**/circuits/main/generated/
+*.save
+*.save.*
 
 # Old gas experiment projects not tracked anymore
 /gas_cost_exp/
