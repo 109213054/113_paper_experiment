@@ -35,6 +35,13 @@ snapshots/
 proof.json
 public.json
 public_fail.json
+verification_key.json
+
+!gas_cost_exp_comparewithothers/zkp/proofs/**/proof.json
+!gas_cost_exp_comparewithothers/zkp/proofs/**/public.json
+!gas_cost_exp_comparewithothers/zkp/proofs/**/public_fail.json
+!gas_cost_exp_comparewithothers/zkp/proofs/**/verification_key.json
+!gas_cost_exp_comparewithothers/zkp/proofs/**/Verifier.sol
 
 # Local setup / large generated folders
 ptau/
