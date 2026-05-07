@@ -13,6 +13,10 @@ MB = 1_000_000
 ours_mb = [x / MB for x in ours_bytes]
 jiang_mb = [x / MB for x in jiang_bytes]
 
+# color
+OURS_COLOR = '#1F77B4'
+JIANG_COLOR = '#FF7F0E'
+
 # Plot
 plt.figure(figsize=(8, 5))
 
@@ -20,7 +24,7 @@ plt.plot(
     buyers,
     ours_mb,
     marker='o',
-    color='blue',
+    color=OURS_COLOR,
     linewidth=2,
     markersize=8,
     label='ours'
@@ -30,7 +34,7 @@ plt.plot(
     buyers,
     jiang_mb,
     marker='^',
-    color='orange',
+    color=JIANG_COLOR,
     linewidth=2,
     markersize=8,
     label='Jiang et al.'

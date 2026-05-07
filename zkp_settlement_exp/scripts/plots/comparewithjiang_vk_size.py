@@ -13,6 +13,10 @@ MB = 1_000_000
 ours_mb = [x / MB for x in ours_bytes]
 jiang_mb = [x / MB for x in jiang_bytes]
 
+# color
+OURS_COLOR = '#1F77B4'
+JIANG_COLOR = '#FF7F0E'
+
 # Plot
 plt.figure(figsize=(8, 5))
 
@@ -20,7 +24,7 @@ plt.plot(
     buyers,
     ours_mb,
     marker='o',
-    color='blue',
+    color=OURS_COLOR,
     linewidth=2,
     markersize=8,
     label='ours'
@@ -30,7 +34,7 @@ plt.plot(
     buyers,
     jiang_mb,
     marker='^',
-    color='orange',
+    color=JIANG_COLOR,
     linewidth=2,
     markersize=8,
     label='Jiang et al.'
@@ -38,19 +42,19 @@ plt.plot(
 
 # Add value labels
 for x, y in zip(buyers, ours_mb):
-    plt.text(x, y, f'{y:.2f}', ha='center', va='bottom', fontsize=10)
+    plt.text(x, y, f'{y:.3f}', ha='center', va='bottom', fontsize=10)
 
 for x, y in zip(buyers, jiang_mb):
-    plt.text(x, y, f'{y:.2f}', ha='center', va='bottom', fontsize=10)
+    plt.text(x, y, f'{y:.3f}', ha='center', va='bottom', fontsize=10)
 
 # Labels and title
 plt.xlabel('Number of Buyers', fontsize=12)
 plt.ylabel('Size (MB)', fontsize=12)
-plt.title('Verify Key Size Comparison', fontsize=14)
+plt.title('Verification Key Size Comparison', fontsize=14)
 
 # Axis settings
 plt.xticks(buyers)
-plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
 
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.legend()
