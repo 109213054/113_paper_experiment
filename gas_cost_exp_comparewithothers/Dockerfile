@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     ca-certificates \
     libgmp-dev \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 22 LTS
@@ -41,4 +42,3 @@ RUN pip3 install --no-cache-dir matplotlib numpy pandas
 WORKDIR /workspace
 
 CMD ["/bin/bash"]
-
